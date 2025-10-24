@@ -354,52 +354,66 @@ install_v13() {
 }
 
 # =============================================================================
-# STEP 8: Install and Configure Supervisor
+# STEP 8: Install Process Manager (PM2 for Docker/Supervisor for VM)
 # =============================================================================
-setup_supervisor() {
-    log_info "Step 8: Installing and configuring Supervisor..."
+setup_process_manager() {
+    log_info "Step 8: Installing process manager..."
     
-    # Install supervisor
-    log_info "Installing Supervisor..."
-    apt install -y supervisor
-    
-    # Enable and start supervisor service
-    systemctl enable supervisor
-    systemctl start supervisor
-    
-    log_info "Supervisor installed and started!"
+    # Check if running in Docker container
+    if [ -f "/.dockerenv" ] || grep -q docker /proc/1/cgroup 2>/dev/null; then
+        log_info "Docker environment detected - installing PM2..."
+        
+        # Install Node.js and npm (required for PM2)
+        log_info "Installing Node.js and npm..."
+        curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+        apt install -y nodejs
+        
+        # Install PM2 globally
+        log_info "Installing PM2..."
+        npm install -g pm2
+        
+        # Setup PM2 to start on system boot (via rc.local or custom init)
+        pm2 startup systemv -u root --hp /root 2>/dev/null || log_warn "PM2 startup registration skipped (no systemd)"
+        
+        log_info "PM2 installed successfully!"
+        echo "PM2" > /tmp/process_manager_type
+    else
+        log_info "VM environment detected - installing Supervisor..."
+        
+        # Install supervisor
+        apt install -y supervisor
+        
+        # Enable and start supervisor service
+        systemctl enable supervisor 2>/dev/null || true
+        systemctl start supervisor 2>/dev/null || service supervisor start || true
+        
+        log_info "Supervisor installed and started!"
+        echo "SUPERVISOR" > /tmp/process_manager_type
+    fi
 }
 
 # =============================================================================
-# STEP 9: Configure Supervisor for v13 Ultra Processor
+# STEP 9: Configure Process Manager for v13 Ultra Processor
 # =============================================================================
-configure_v13_supervisor() {
-    log_info "Step 9: Configuring Supervisor for v13 ultra processor..."
+configure_v13_process_manager() {
+    log_info "Step 9: Configuring process manager for v13 ultra processor..."
     
     cd "$V13_DIR"
     
-    # Find the main Python script (look for common names)
+    # Find ultra_aggressive_worker.py
     MAIN_SCRIPT=""
     
-    # Check for common entry point names
-    for script_name in "ultra_aggressive_worker.py"; do
-        if [ -f "$V13_DIR/$script_name" ]; then
-            MAIN_SCRIPT="$script_name"
-            break
-        fi
-        
-        # Also check in v13 subdirectory if it exists
-        if [ -f "$V13_DIR/v13/$script_name" ]; then
-            MAIN_SCRIPT="v13/$script_name"
-            break
-        fi
-    done
+    if [ -f "$V13_DIR/ultra_aggressive_worker.py" ]; then
+        MAIN_SCRIPT="ultra_aggressive_worker.py"
+    elif [ -f "$V13_DIR/v13/ultra_aggressive_worker.py" ]; then
+        MAIN_SCRIPT="v13/ultra_aggressive_worker.py"
+    fi
     
     if [ -z "$MAIN_SCRIPT" ]; then
-        log_warn "Could not find main Python script automatically."
+        log_warn "Could not find ultra_aggressive_worker.py automatically."
         log_info "Available Python files:"
         find "$V13_DIR" -name "*.py" -type f | head -10
-        log_warn "Please configure Supervisor manually at /etc/supervisor/conf.d/v13-processor.conf"
+        log_warn "Please configure process manager manually"
         return 0
     fi
     
@@ -409,10 +423,65 @@ configure_v13_supervisor() {
     SCRIPT_DIR=$(dirname "$V13_DIR/$MAIN_SCRIPT")
     SCRIPT_NAME=$(basename "$MAIN_SCRIPT")
     
-    # Create supervisor configuration
-    SUPERVISOR_CONF="/etc/supervisor/conf.d/v13-processor.conf"
+    # Determine which process manager to use
+    PM_TYPE=$(cat /tmp/process_manager_type 2>/dev/null || echo "SUPERVISOR")
     
-    log_info "Creating Supervisor configuration at $SUPERVISOR_CONF..."
+    if [ "$PM_TYPE" = "PM2" ]; then
+        configure_pm2_processor "$SCRIPT_DIR" "$SCRIPT_NAME"
+    else
+        configure_supervisor_processor "$SCRIPT_DIR" "$SCRIPT_NAME"
+    fi
+}
+
+# Configure PM2 for v13 processor
+configure_pm2_processor() {
+    local SCRIPT_DIR="$1"
+    local SCRIPT_NAME="$2"
+    
+    log_info "Configuring PM2 for v13 processor..."
+    
+    # Create PM2 ecosystem config file
+    cat > "$V13_DIR/ecosystem.config.js" <<EOF
+module.exports = {
+  apps: [{
+    name: 'v13-ultra-processor',
+    script: 'python3',
+    args: '$SCRIPT_NAME',
+    cwd: '$SCRIPT_DIR',
+    instances: 1,
+    autorestart: true,
+    watch: false,
+    max_memory_restart: '2G',
+    env: {
+      PATH: '/usr/local/bin:/usr/bin:/bin:$ESRGAN_DIR',
+      VK_ICD_FILENAMES: '/home/vulkan_config/nvidia_icd.json'
+    },
+    error_file: '/var/log/pm2/v13-processor-error.log',
+    out_file: '/var/log/pm2/v13-processor.log',
+    log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+    merge_logs: true,
+    restart_delay: 4000,
+    max_restarts: 10,
+    kill_timeout: 5000
+  }]
+};
+EOF
+    
+    mkdir -p /var/log/pm2
+    
+    log_info "PM2 configuration created!"
+    log_info "Config file: $V13_DIR/ecosystem.config.js"
+    log_info "Script location: $SCRIPT_DIR/$SCRIPT_NAME"
+}
+
+# Configure Supervisor for v13 processor
+configure_supervisor_processor() {
+    local SCRIPT_DIR="$1"
+    local SCRIPT_NAME="$2"
+    
+    log_info "Configuring Supervisor for v13 processor..."
+    
+    SUPERVISOR_CONF="/etc/supervisor/conf.d/v13-processor.conf"
     
     cat > "$SUPERVISOR_CONF" <<EOF
 [program:v13-ultra-processor]
@@ -439,20 +508,15 @@ EOF
     # If custom Vulkan config exists, add it to environment
     if [ -f "/home/vulkan_config/nvidia_icd.json" ]; then
         sed -i "s|environment=PATH=|environment=VK_ICD_FILENAMES=/home/vulkan_config/nvidia_icd.json,PATH=|" "$SUPERVISOR_CONF"
-        log_info "Added VK_ICD_FILENAMES to supervisor environment"
     fi
     
-    log_info "Supervisor configuration created!"
-    
-    # Create log directory if it doesn't exist
     mkdir -p /var/log/supervisor
     
     # Reload supervisor configuration
-    log_info "Reloading Supervisor configuration..."
-    supervisorctl reread
-    supervisorctl update
+    supervisorctl reread 2>/dev/null || true
+    supervisorctl update 2>/dev/null || true
     
-    log_info "v13 ultra processor configured with Supervisor!"
+    log_info "Supervisor configuration created!"
     log_info "Configuration file: $SUPERVISOR_CONF"
     log_info "Script location: $SCRIPT_DIR/$SCRIPT_NAME"
 }
@@ -498,34 +562,55 @@ main() {
     install_v13
     echo ""
     
-    setup_supervisor
+    setup_process_manager
     echo ""
     
-    configure_v13_supervisor
+    configure_v13_process_manager
     echo ""
     
     echo "=========================================="
     echo "  Setup Complete!"
     echo "=========================================="
     echo ""
+    # Determine which process manager was installed
+    PM_TYPE=$(cat /tmp/process_manager_type 2>/dev/null || echo "SUPERVISOR")
+    
     log_info "Summary:"
     echo "  - ESRGAN installed at: $ESRGAN_DIR"
     echo "  - v13 program installed at: $V13_DIR"
     echo "  - ESRGAN command: esrgan (accessible system-wide)"
-    echo "  - Supervisor installed and configured"
+    echo "  - Process manager: $PM_TYPE"
     echo ""
-    log_info "Supervisor Management Commands:"
-    echo "  - Start:   supervisorctl start v13-ultra-processor"
-    echo "  - Stop:    supervisorctl stop v13-ultra-processor"
-    echo "  - Restart: supervisorctl restart v13-ultra-processor"
-    echo "  - Status:  supervisorctl status v13-ultra-processor"
-    echo "  - Logs:    tail -f /var/log/supervisor/v13-processor.log"
+    
+    if [ "$PM_TYPE" = "PM2" ]; then
+        log_info "PM2 Management Commands:"
+        echo "  - Start:   pm2 start $V13_DIR/ecosystem.config.js"
+        echo "  - Stop:    pm2 stop v13-ultra-processor"
+        echo "  - Restart: pm2 restart v13-ultra-processor"
+        echo "  - Delete:  pm2 delete v13-ultra-processor"
+        echo "  - Status:  pm2 status"
+        echo "  - Logs:    pm2 logs v13-ultra-processor"
+        echo "  - Monitor: pm2 monit"
+        echo "  - Save:    pm2 save  (save current process list)"
+    else
+        log_info "Supervisor Management Commands:"
+        echo "  - Start:   supervisorctl start v13-ultra-processor"
+        echo "  - Stop:    supervisorctl stop v13-ultra-processor"
+        echo "  - Restart: supervisorctl restart v13-ultra-processor"
+        echo "  - Status:  supervisorctl status v13-ultra-processor"
+        echo "  - Logs:    tail -f /var/log/supervisor/v13-processor.log"
+    fi
+    
     echo ""
     log_info "Next steps:"
     echo "  1. Run: source ~/.bashrc"
     echo "  2. Verify ESRGAN: esrgan -h"
     echo "  3. Configure v13 with your Laravel webapp settings"
-    echo "  4. Start processor: supervisorctl start v13-ultra-processor"
+    if [ "$PM_TYPE" = "PM2" ]; then
+        echo "  4. Start processor: pm2 start $V13_DIR/ecosystem.config.js"
+    else
+        echo "  4. Start processor: supervisorctl start v13-ultra-processor"
+    fi
     echo ""
     log_warn "NOTE: v13 processor is NOT auto-started. Configure your webapp first!"
     log_warn "If NVIDIA driver was installed, REBOOT is recommended!"
