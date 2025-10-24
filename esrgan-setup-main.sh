@@ -32,11 +32,11 @@ log_error() {
 setup_system() {
     log_info "Step 1: Updating system and installing dependencies..."
     
-    sudo apt update
-    sudo apt upgrade -y
+    apt update
+    apt upgrade -y
     
     log_info "Installing essential packages..."
-    sudo apt install -y wget curl unzip build-essential git
+    apt install -y wget curl unzip build-essential git
     
     log_info "Checking for NVIDIA drivers..."
     if command -v nvidia-smi &> /dev/null; then
@@ -44,14 +44,14 @@ setup_system() {
         nvidia-smi --query-gpu=name,driver_version --format=csv,noheader
     else
         log_warn "NVIDIA driver not found. Installing..."
-        sudo apt install -y ubuntu-drivers-common
-        sudo ubuntu-drivers autoinstall
+        apt install -y ubuntu-drivers-common
+        ubuntu-drivers autoinstall
         log_warn "NVIDIA driver installed. You may need to REBOOT and re-run this script."
         read -p "Press Enter to continue or Ctrl+C to exit and reboot..."
     fi
     
     log_info "Installing Python and pip..."
-    sudo apt install -y python3 python3-pip python3-venv
+    apt install -y python3 python3-pip python3-venv
     python3 --version
     pip3 --version
     
@@ -66,11 +66,11 @@ setup_vulkan() {
     
     # Install Vulkan packages
     log_info "Installing Vulkan packages..."
-    sudo apt install -y vulkan-tools libvulkan1 mesa-vulkan-drivers vulkan-validationlayers
+    apt install -y vulkan-tools libvulkan1 mesa-vulkan-drivers vulkan-validationlayers
     
     # Install X11 libraries (required dependencies)
     log_info "Installing X11 libraries..."
-    sudo apt install -y xvfb x11-utils libx11-6 libxext6 libxrandr2 libxrender1 libxxf86vm1 libxfixes3
+    apt install -y xvfb x11-utils libx11-6 libxext6 libxrandr2 libxrender1 libxxf86vm1 libxfixes3
     
     # Configure NVIDIA Vulkan ICD
     NVIDIA_ICD_PATH="/etc/vulkan/icd.d/nvidia_icd.json"
@@ -78,10 +78,11 @@ setup_vulkan() {
     
     log_info "Configuring NVIDIA Vulkan ICD for headless operation..."
     
-    # Check if we can write to system directory
-    if sudo test -w /etc/vulkan/icd.d/ 2>/dev/null || sudo mkdir -p /etc/vulkan/icd.d/ 2>/dev/null; then
-        # Try to create system-wide ICD config (EGL for headless)
-        if sudo bash -c "cat > $NVIDIA_ICD_PATH" <<'EOF' 2>/dev/null
+    # Create ICD directory if needed
+    mkdir -p /etc/vulkan/icd.d/
+    
+    # Create system-wide ICD config (EGL for headless)
+    cat > $NVIDIA_ICD_PATH <<'EOF'
 {
     "file_format_version" : "1.0.0",
     "ICD": {
@@ -90,50 +91,15 @@ setup_vulkan() {
     }
 }
 EOF
-        then
-            log_info "NVIDIA ICD configured at $NVIDIA_ICD_PATH (EGL mode)"
-        else
-            log_warn "Cannot write to $NVIDIA_ICD_PATH (read-only). Creating custom config..."
-            setup_custom_vulkan_icd
-        fi
-    else
-        log_warn "Cannot access /etc/vulkan/icd.d/. Creating custom configuration..."
-        setup_custom_vulkan_icd
-    fi
+    
+    log_info "NVIDIA ICD configured at $NVIDIA_ICD_PATH (EGL mode)"
     
     # Run ldconfig
-    sudo ldconfig
+    ldconfig
     
     log_info "Vulkan installation complete!"
 }
 
-# Helper function for custom Vulkan ICD configuration
-setup_custom_vulkan_icd() {
-    log_info "Setting up custom Vulkan ICD in user directory..."
-    
-    # Create custom ICD directory
-    mkdir -p ~/.local/share/vulkan/icd.d/
-    
-    # Create custom ICD JSON with EGL for headless
-    cat > ~/.local/share/vulkan/icd.d/nvidia_icd.json <<'EOF'
-{
-    "file_format_version" : "1.0.0",
-    "ICD": {
-        "library_path": "libEGL_nvidia.so.0",
-        "api_version" : "1.3.289"
-    }
-}
-EOF
-    
-    # Set environment variable for custom ICD
-    export VK_ICD_FILENAMES=~/.local/share/vulkan/icd.d/nvidia_icd.json
-    
-    if ! grep -q "VK_ICD_FILENAMES" ~/.bashrc; then
-        echo "export VK_ICD_FILENAMES=~/.local/share/vulkan/icd.d/nvidia_icd.json" >> ~/.bashrc
-    fi
-    
-    log_info "Custom Vulkan ICD configured at ~/.local/share/vulkan/icd.d/"
-}
 
 # =============================================================================
 # STEP 3: Verify Vulkan Configuration
@@ -183,8 +149,7 @@ install_esrgan() {
     log_info "Step 4: Downloading and installing ESRGAN..."
     
     # Create directory
-    sudo mkdir -p "$ESRGAN_DIR"
-    sudo chown $USER:$USER "$ESRGAN_DIR"
+    mkdir -p "$ESRGAN_DIR"
     
     # Download ESRGAN
     cd /tmp
@@ -237,7 +202,7 @@ configure_esrgan() {
     cd "$ESRGAN_DIR"
     
     # Create symbolic link in /usr/local/bin for system-wide access
-    sudo ln -sf "$ESRGAN_DIR/esrgan" /usr/local/bin/esrgan
+    ln -sf "$ESRGAN_DIR/esrgan" /usr/local/bin/esrgan
     
     # Verify it's accessible
     if command -v esrgan &> /dev/null; then
@@ -302,8 +267,7 @@ install_v13() {
     log_info "Step 7: Downloading and installing v13 Python program..."
     
     # Create directory
-    sudo mkdir -p "$V13_DIR"
-    sudo chown $USER:$USER "$V13_DIR"
+    mkdir -p "$V13_DIR"
     
     # Download v13
     cd /tmp
@@ -354,8 +318,8 @@ main() {
     echo ""
     
     # Check if running as root
-    if [ "$EUID" -eq 0 ]; then
-        log_error "Please do not run this script as root. Run as regular user with sudo access."
+    if [ "$EUID" -ne 0 ]; then
+        log_error "Please run this script as root (use sudo or run as root user)."
         exit 1
     fi
     

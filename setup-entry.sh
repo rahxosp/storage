@@ -6,7 +6,7 @@ echo "======================================"
 echo "ESRGAN Server Setup - Entry Point"
 echo "======================================"
 
-MAIN_SCRIPT_URL="YOUR_URL_HERE/esrgan-setup-main.sh"
+MAIN_SCRIPT_URL="https://raw.githubusercontent.com/rahxosp/storage/refs/heads/main/esrgan-setup-main.sh"
 SCRIPT_NAME="esrgan-setup-main.sh"
 
 echo "Downloading main setup script..."
