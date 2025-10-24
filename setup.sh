@@ -389,16 +389,33 @@ install_vulkan() {
     
     # Install Vulkan packages
     local vulkan_packages=(
-        vulkan-utils
         vulkan-tools
         libvulkan1
         libvulkan-dev
-        nvidia-vulkan-icd
+        mesa-vulkan-drivers
+        vulkan-validationlayers
     )
     
     if ! sudo DEBIAN_FRONTEND=noninteractive apt install -y "${vulkan_packages[@]}" 2>&1 | sudo tee -a "${LOG_FILE}"; then
         log ERROR "Failed to install Vulkan packages"
         return ${E_DEPENDENCY}
+    fi
+    
+    # Install X11 libraries (required for headless Vulkan)
+    log INFO "Installing X11 libraries for headless operation..."
+    local x11_packages=(
+        xvfb
+        x11-utils
+        libx11-6
+        libxext6
+        libxrandr2
+        libxrender1
+        libxxf86vm1
+        libxfixes3
+    )
+    
+    if ! sudo DEBIAN_FRONTEND=noninteractive apt install -y "${x11_packages[@]}" 2>&1 | sudo tee -a "${LOG_FILE}"; then
+        log WARN "Failed to install some X11 packages, but continuing..."
     fi
     
     log SUCCESS "Vulkan packages installed"
@@ -411,10 +428,27 @@ configure_vulkan() {
     
     local nvidia_icd="/etc/vulkan/icd.d/nvidia_icd.json"
     
-    # Check if nvidia_icd.json exists
+    # Create ICD directory if it doesn't exist
+    sudo mkdir -p /etc/vulkan/icd.d/
+    
+    # Always create/update NVIDIA ICD configuration for headless operation
+    log INFO "Creating NVIDIA Vulkan ICD configuration..."
+    sudo tee "${nvidia_icd}" > /dev/null <<'EOF'
+{
+    "file_format_version": "1.0.0",
+    "ICD": {
+        "library_path": "libEGL_nvidia.so.0",
+        "api_version": "1.3.289"
+    }
+}
+EOF
+    
+    log SUCCESS "NVIDIA ICD configured for headless operation (EGL)"
+    
+    # Check if nvidia_icd.json exists and is readable
     if [ ! -f "${nvidia_icd}" ]; then
-        log ERROR "nvidia_icd.json not found at ${nvidia_icd}"
-        log WARN "Creating custom Vulkan configuration..."
+        log ERROR "nvidia_icd.json creation failed"
+        log WARN "Creating user-level custom Vulkan configuration..."
         
         # Create custom Vulkan directory
         mkdir -p ~/.local/share/vulkan/icd.d/
@@ -424,8 +458,8 @@ configure_vulkan() {
 {
     "file_format_version": "1.0.0",
     "ICD": {
-        "library_path": "libGLX_nvidia.so.0",
-        "api_version": "1.3.0"
+        "library_path": "libEGL_nvidia.so.0",
+        "api_version": "1.3.289"
     }
 }
 EOF
