@@ -74,15 +74,17 @@ setup_vulkan() {
     
     # Configure NVIDIA Vulkan ICD
     NVIDIA_ICD_PATH="/etc/vulkan/icd.d/nvidia_icd.json"
+    CUSTOM_VULKAN_DIR="/home/vulkan_config"
+    CUSTOM_ICD_PATH="$CUSTOM_VULKAN_DIR/nvidia_icd.json"
     API_VERSION="1.3.289"
     
     log_info "Configuring NVIDIA Vulkan ICD for headless operation..."
     
-    # Create ICD directory if needed
-    mkdir -p /etc/vulkan/icd.d/
+    # Try to write to system directory first
+    mkdir -p /etc/vulkan/icd.d/ 2>/dev/null || true
     
-    # Create system-wide ICD config (EGL for headless)
-    cat > $NVIDIA_ICD_PATH <<'EOF'
+    # Attempt to create system-wide ICD config
+    if cat > $NVIDIA_ICD_PATH <<'EOF' 2>/dev/null
 {
     "file_format_version" : "1.0.0",
     "ICD": {
@@ -91,8 +93,53 @@ setup_vulkan() {
     }
 }
 EOF
-    
-    log_info "NVIDIA ICD configured at $NVIDIA_ICD_PATH (EGL mode)"
+    then
+        log_info "NVIDIA ICD configured at $NVIDIA_ICD_PATH (EGL mode)"
+    else
+        log_warn "Cannot write to $NVIDIA_ICD_PATH (read-only file system)"
+        log_info "Creating custom Vulkan configuration at $CUSTOM_VULKAN_DIR..."
+        
+        # Create writable directory
+        mkdir -p "$CUSTOM_VULKAN_DIR"
+        
+        # Check if original ICD file exists to copy from
+        if [ -f "$NVIDIA_ICD_PATH" ]; then
+            log_info "Copying existing ICD config as base..."
+            cp "$NVIDIA_ICD_PATH" "$CUSTOM_ICD_PATH"
+        fi
+        
+        # Create/overwrite with our custom config (EGL for headless)
+        cat > "$CUSTOM_ICD_PATH" <<'EOF'
+{
+    "file_format_version" : "1.0.0",
+    "ICD": {
+        "library_path": "libEGL_nvidia.so.0",
+        "api_version" : "1.3.289"
+    }
+}
+EOF
+        
+        # Set environment variable to use custom config
+        export VK_ICD_FILENAMES="$CUSTOM_ICD_PATH"
+        
+        # Make it permanent in bashrc and profile
+        if ! grep -q "VK_ICD_FILENAMES" /root/.bashrc 2>/dev/null; then
+            echo "export VK_ICD_FILENAMES=$CUSTOM_ICD_PATH" >> /root/.bashrc
+        fi
+        
+        if ! grep -q "VK_ICD_FILENAMES" /etc/profile 2>/dev/null; then
+            echo "export VK_ICD_FILENAMES=$CUSTOM_ICD_PATH" >> /etc/profile
+        fi
+        
+        # Also add to /etc/environment for system-wide availability
+        if ! grep -q "VK_ICD_FILENAMES" /etc/environment 2>/dev/null; then
+            echo "VK_ICD_FILENAMES=$CUSTOM_ICD_PATH" >> /etc/environment
+        fi
+        
+        log_info "Custom NVIDIA ICD configured at $CUSTOM_ICD_PATH"
+        log_info "Environment variable VK_ICD_FILENAMES set to use custom config"
+        log_info "Config added to /root/.bashrc, /etc/profile, and /etc/environment"
+    fi
     
     # Run ldconfig
     ldconfig
