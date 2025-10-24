@@ -382,7 +382,7 @@ configure_v13_supervisor() {
     MAIN_SCRIPT=""
     
     # Check for common entry point names
-    for script_name in "ultra_processor.py" "concurrent_pipeline_worker.py" "main.py" "worker.py" "processor.py" "app.py"; do
+    for script_name in "ultra_aggressive_worker.py"; do
         if [ -f "$V13_DIR/$script_name" ]; then
             MAIN_SCRIPT="$script_name"
             break
