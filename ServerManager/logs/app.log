@@ -1,0 +1,68 @@
+2025-10-26 09:18:14 [INFO] Loading server configurations...
+2025-10-26 09:18:14 [INFO] Created worker for 27290709
+2025-10-26 09:18:14 [INFO] Loaded 1 servers
+2025-10-26 09:18:17 [INFO] Started worker for 27290709
+2025-10-26 09:21:57 [INFO] Edited server: 27290709 -> 27290709
+2025-10-26 09:22:01 [INFO] Loading server configurations...
+2025-10-26 09:22:01 [INFO] Created worker for 27290709
+2025-10-26 09:22:01 [INFO] Loaded 1 servers
+2025-10-26 09:22:11 [INFO] Started worker for 27290709
+2025-10-26 09:23:14 [INFO] Stopped worker for 27290709
+2025-10-26 09:23:25 [INFO] Started worker for 27290709
+2025-10-26 09:35:36 [INFO] Stopped worker for 27290709
+2025-10-26 09:41:27 [INFO] Loading server configurations...
+2025-10-26 09:41:27 [INFO] Created worker for 27290709
+2025-10-26 09:41:27 [INFO] Loaded 1 servers
+2025-10-26 09:41:39 [INFO] Started worker for 27290709
+2025-10-26 09:57:01 [INFO] Loading server configurations...
+2025-10-26 09:57:01 [INFO] Created worker for 27290709
+2025-10-26 09:57:01 [INFO] Loaded 1 servers
+2025-10-26 09:57:09 [INFO] Started worker for 27290709
+2025-10-26 09:59:46 [INFO] Requested restart for 27290709
+2025-10-26 10:06:57 [INFO] Added server: 27289942
+2025-10-26 10:07:14 [INFO] Edited server: 27289942 -> 27289942
+2025-10-26 10:07:24 [INFO] Edited server: 27289942 -> 27289942
+2025-10-26 10:07:26 [INFO] Started worker for 27289942
+2025-10-26 10:12:50 [INFO] Loading server configurations...
+2025-10-26 10:12:50 [INFO] Created worker for 27290709
+2025-10-26 10:12:50 [INFO] Created worker for 27289942
+2025-10-26 10:12:50 [INFO] Loaded 2 servers
+2025-10-26 10:12:57 [INFO] Started worker for 27290709
+2025-10-26 10:12:58 [INFO] Started worker for 27289942
+2025-10-26 10:13:42 [INFO] Added server: 1.208.108.242
+2025-10-26 10:13:53 [INFO] Edited server: 1.208.108.242 -> 27290404
+2025-10-26 10:14:07 [INFO] Edited server: 27290404 -> 27290404
+2025-10-26 10:14:13 [INFO] Requested restart for 27290709
+2025-10-26 10:14:17 [INFO] Requested restart for 27289942
+2025-10-26 10:14:20 [INFO] Started worker for 27290404
+2025-10-26 10:14:40 [INFO] Requested restart for 27289942
+2025-10-26 10:20:08 [INFO] Added server: 27292356
+2025-10-26 10:20:22 [INFO] Edited server: 27292356 -> 27292356
+2025-10-26 10:23:43 [INFO] Started worker for 27292356
+2025-10-26 10:32:56 [INFO] Added server: 27292357
+2025-10-26 10:33:05 [INFO] Edited server: 27292357 -> 27292357
+2025-10-26 10:33:16 [INFO] Edited server: 27292357 -> 27292357
+2025-10-26 10:33:20 [INFO] Started worker for 27292357
+2025-10-26 10:38:19 [INFO] Requested restart for 27289942
+2025-10-26 17:20:41 [INFO] Stopped all workers
+2025-10-26 17:21:05 [INFO] Loading server configurations...
+2025-10-26 17:21:05 [INFO] Created worker for 27290709
+2025-10-26 17:21:05 [INFO] Created worker for 27289942
+2025-10-26 17:21:05 [INFO] Created worker for 27290404
+2025-10-26 17:21:05 [INFO] Created worker for 27292356
+2025-10-26 17:21:05 [INFO] Created worker for 27292357
+2025-10-26 17:21:05 [INFO] Loaded 5 servers
+2025-10-26 17:26:04 [INFO] Loading server configurations...
+2025-10-26 17:26:04 [INFO] Created worker for 27290709
+2025-10-26 17:26:04 [INFO] Created worker for 27289942
+2025-10-26 17:26:04 [INFO] Created worker for 27290404
+2025-10-26 17:26:04 [INFO] Created worker for 27292356
+2025-10-26 17:26:04 [INFO] Created worker for 27292357
+2025-10-26 17:26:04 [INFO] Loaded 5 servers
+2025-10-26 17:26:19 [INFO] Started all enabled workers
+2025-10-26 17:26:54 [INFO] Requested restart for 27290709
+2025-10-26 17:26:54 [INFO] Started worker for 27289942
+2025-10-26 17:30:11 [INFO] Requested restart for 27289942
+2025-10-26 17:35:06 [INFO] Requested restart for 27290709
+2025-10-26 17:40:07 [INFO] Requested restart for 27292356
+2025-10-26 17:42:13 [INFO] Requested restart for 27292357

@@ -1,0 +1,99 @@
+{
+  "servers": [
+    {
+      "name": "27290709",
+      "host": "1.208.108.242",
+      "port": 54633,
+      "username": "root",
+      "auth": {
+        "type": "key",
+        "key_path": "C:/Users/AJU/.ssh/vast",
+        "passphrase": null
+      },
+      "command": "/venv/main/bin/python /home/v13/ultra_aggressive_worker.py",
+      "working_dir": "/home/v13",
+      "env": {},
+      "restart_delay_seconds": 12,
+      "enabled": true,
+      "stop_command": "pkill -f ultra_aggressive_worker.py",
+      "process_match_regex": "/home/v13/ultra_aggressive_worker\\.py",
+      "pre_command": ""
+    },
+    {
+      "name": "27289942",
+      "host": "113.201.14.131",
+      "port": 43857,
+      "username": "root",
+      "auth": {
+        "type": "key",
+        "key_path": "C:/Users/AJU/.ssh/vast",
+        "passphrase": null
+      },
+      "command": "/venv/main/bin/python /home/v13/ultra_aggressive_worker.py",
+      "working_dir": "/home/v13",
+      "env": {},
+      "restart_delay_seconds": 12,
+      "enabled": true,
+      "stop_command": "pkill -f ultra_aggressive_worker.py",
+      "process_match_regex": "/home/v13/ultra_aggressive_worker\\.py",
+      "pre_command": ""
+    },
+    {
+      "name": "27290404",
+      "host": "1.208.108.242",
+      "port": 54653,
+      "username": "root",
+      "auth": {
+        "type": "key",
+        "key_path": "C:/Users/AJU/.ssh/vast",
+        "passphrase": null
+      },
+      "command": "/venv/main/bin/python /home/v13/ultra_aggressive_worker.py",
+      "working_dir": "/home/v13",
+      "env": {},
+      "restart_delay_seconds": 12,
+      "enabled": true,
+      "stop_command": "pkill -f ultra_aggressive_worker.py",
+      "process_match_regex": "/home/v13/ultra_aggressive_worker\\.py",
+      "pre_command": ""
+    },
+    {
+      "name": "27292356",
+      "host": "142.189.182.224",
+      "port": 42835,
+      "username": "root",
+      "auth": {
+        "type": "key",
+        "key_path": "C:/Users/AJU/.ssh/vast",
+        "passphrase": null
+      },
+      "command": "/venv/main/bin/python /home/v13/ultra_aggressive_worker.py",
+      "working_dir": "/home/v13",
+      "env": {},
+      "restart_delay_seconds": 12,
+      "enabled": true,
+      "stop_command": "pkill -f ultra_aggressive_worker.py",
+      "process_match_regex": "/home/v13/ultra_aggressive_worker\\.py",
+      "pre_command": ""
+    },
+    {
+      "name": "27292357",
+      "host": "1.208.108.242",
+      "port": 35315,
+      "username": "root",
+      "auth": {
+        "type": "key",
+        "key_path": "C:/Users/AJU/.ssh/vast",
+        "passphrase": null
+      },
+      "command": "/venv/main/bin/python /home/v13/ultra_aggressive_worker.py",
+      "working_dir": "/home/v13",
+      "env": {},
+      "restart_delay_seconds": 12,
+      "enabled": true,
+      "stop_command": "pkill -f ultra_aggressive_worker.py",
+      "process_match_regex": "/home/v13/ultra_aggressive_worker\\.py",
+      "pre_command": ""
+    }
+  ]
+}
