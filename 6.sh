@@ -585,6 +585,7 @@ main() {
     if [ "$PM_TYPE" = "PM2" ]; then
         log_info "PM2 Management Commands:"
         echo "  - Start:   pm2 start $V13_DIR/ecosystem.config.js"
+        echo "  - Stop:    pm2 start /home/v13/ecosystem.config.js"
         echo "  - Stop:    pm2 stop v13-ultra-processor"
         echo "  - Restart: pm2 restart v13-ultra-processor"
         echo "  - Delete:  pm2 delete v13-ultra-processor"
